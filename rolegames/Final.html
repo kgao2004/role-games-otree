@@ -1,0 +1,44 @@
+{{ block title }}Thanks for playing!{{ endblock }}
+
+{{ block styles }}
+<link rel="stylesheet" href="{{ static 'rolegames/rolegames.css' }}">
+{{ endblock }}
+
+{{ block content }}
+<p>Your points are your group's scores from the rounds you played.</p>
+
+<table class="rg-score-table" style="max-width:560px">
+  <tr>
+    <th>Game</th>
+    <th>Condition</th>
+    <th class="rg-center">Rounds played</th>
+    <th class="rg-center">Points</th>
+  </tr>
+  {{ for row in rows }}
+  <tr>
+    <td>{{ row.game }}</td>
+    <td>{{ row.condition }}</td>
+    <td class="rg-center">{{ row.played }} / {{ rounds_per_game }}</td>
+    <td class="rg-center">{{ row.points }}</td>
+  </tr>
+  {{ endfor }}
+  <tr class="rg-row-best">
+    <td colspan="3">Total</td>
+    <td class="rg-center">{{ total }}</td>
+  </tr>
+</table>
+
+{{ if completion_url }}
+<p style="margin-top:18px">
+  Click the button below to complete the study on Prolific. Do not close this window until you
+  have done so.
+</p>
+<p>
+  <a class="btn btn-primary" href="{{ completion_url }}">Click here to complete the study on Prolific</a>
+</p>
+{{ else }}
+<p style="margin-top:18px">You can close this window now.</p>
+{{ endif }}
+
+<div style="margin-top:22px"><button class="btn btn-primary">Next</button></div>
+{{ endblock }}

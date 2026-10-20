@@ -1,0 +1,371 @@
+/* Role Games look, carried over from the Streamlit Play page. */
+
+body {
+  background: #fff;
+  color: #262730;
+}
+
+.otree-body {
+  max-width: 880px;
+}
+
+.otree-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+/* ── Header row: round, condition, running total ── */
+.rg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.rg-muted {
+  color: #777;
+}
+
+.rg-divider {
+  border: 0;
+  border-top: 1px solid #e3e3e3;
+  margin: 16px 0;
+  opacity: 1;
+}
+
+/* ── Player cards ── */
+.rg-players {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rg-card {
+  flex: 1 1 0;
+  min-width: 72px;
+  text-align: center;
+  padding: 12px 8px;
+  border-radius: 10px;
+  background: #f8f8f8;
+  border: 2px solid #ddd;
+}
+
+.rg-card-me {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+}
+
+.rg-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  margin: 0 auto;
+  background: var(--c);
+}
+
+.rg-circle-sm {
+  width: 44px;
+  height: 44px;
+}
+
+/* the white-then-colored ring that marks "You" */
+.rg-circle.rg-me {
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--c);
+}
+
+.rg-label {
+  font-size: 0.78em;
+  color: #555;
+  margin-top: 6px;
+}
+
+.rg-label-me {
+  font-weight: 600;
+}
+
+.rg-action {
+  font-size: 1.5em;
+  line-height: 1.3;
+  margin-top: 5px;
+}
+
+/* cards that hold several players (Anonymous, Tag-based) */
+.rg-group-card {
+  flex-basis: 0;
+  padding: 12px 10px;
+}
+
+.rg-group-title {
+  font-size: 0.78em;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 10px;
+}
+
+.rg-mini-row {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px clamp(12px, 5vw, 40px);
+}
+
+.rg-mini {
+  min-width: 58px;
+  padding: 4px 6px;
+}
+
+.rg-mini .rg-label {
+  font-size: 0.7em;
+  margin-top: 5px;
+}
+
+.rg-emojis {
+  font-size: 1.3em;
+  letter-spacing: 2px;
+  margin-top: 10px;
+}
+
+.rg-note {
+  font-size: 0.68em;
+  color: #999;
+  margin-top: 6px;
+}
+
+/* ── Messages ── */
+.rg-info {
+  margin-top: 12px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: #e8f4fd;
+  border: 1px solid #b3d4f0;
+  color: #1a5276;
+  font-size: 0.9em;
+}
+
+/* ── Choosing ── */
+.rg-prompt {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.rg-caption {
+  color: #777;
+  font-size: 0.875em;
+  margin: 0 0 4px;
+}
+
+.rg-choices {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.rg-choice {
+  min-width: 160px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid #d0d0d5;
+  background: #fff;
+  color: #262730;
+  font-size: 1rem;
+}
+
+.rg-choice:hover,
+.rg-choice:focus-visible {
+  border-color: #4878cf;
+  color: #4878cf;
+}
+
+/* ── Results ── */
+.rg-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 48px;
+  margin-bottom: 18px;
+}
+
+.rg-metric-label {
+  font-size: 0.875em;
+  color: #555;
+}
+
+.rg-metric-value {
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+/* ── Instructions ── */
+.rg-lead {
+  font-size: 1.05rem;
+  margin-bottom: 18px;
+}
+
+.rg-section-title {
+  font-weight: 600;
+  margin: 18px 0 8px;
+}
+
+.rg-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.rg-action-card {
+  flex: 1 1 220px;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.rg-action-card small {
+  color: #555;
+  font-size: 0.88em;
+}
+
+.rg-stag {
+  background: #f0f4ff;
+  border: 1px solid #c5cae9;
+}
+
+.rg-hare {
+  background: #f0fff4;
+  border: 1px solid #c8e6c9;
+}
+
+.rg-score-table {
+  width: 100%;
+  font-size: 0.9em;
+  border-collapse: collapse;
+}
+
+.rg-score-table th,
+.rg-score-table td {
+  padding: 5px 10px;
+}
+
+.rg-score-table th {
+  background: #efefef;
+}
+
+.rg-score-table .rg-center {
+  text-align: center;
+}
+
+.rg-row-best {
+  background: #e8f5e9;
+  font-weight: 600;
+}
+
+.rg-row-worst {
+  background: #fff3e0;
+}
+
+.rg-tag-best {
+  color: #2e7d32;
+  font-size: 0.85em;
+}
+
+.rg-tag-worst {
+  color: #e65100;
+  font-size: 0.85em;
+}
+
+.rg-panel {
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: #f8f8f8;
+  border: 1px solid #ddd;
+}
+
+.rg-panel ol,
+.rg-panel ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  line-height: 1.8em;
+}
+
+.rg-conditions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.rg-condition {
+  flex: 1 1 220px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #f8f8f8;
+  border: 1px solid #ddd;
+}
+
+.rg-condition small {
+  color: #444;
+  font-size: 0.88em;
+}
+
+.rg-tag-chip {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ── Consent / comprehension forms ── */
+.otree-form-group {
+  margin: 16px 0;
+}
+
+.otree-form-group label,
+.controls label {
+  font-weight: 500;
+}
+
+.rg-consent {
+  margin-top: 18px;
+}
+
+.rg-consent label {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-weight: 500;
+}
+
+.rg-consent input {
+  margin-top: 4px;
+}
+
+/* ── Wait pages ── */
+.otree-wait-page .card {
+  border: 1px solid #ddd;
+  box-shadow: none;
+}
+
+.otree-wait-page .card-header {
+  background: #f8f8f8;
+}
+
+/* ── Phones ── */
+@media (max-width: 480px) {
+  .rg-circle {
+    width: 42px;
+    height: 42px;
+  }
+
+  .rg-circle-sm {
+    width: 36px;
+    height: 36px;
+  }
+
+  .rg-card {
+    min-width: 60px;
+    padding: 10px 4px;
+  }
+
+  .rg-choice {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}

@@ -1,0 +1,29 @@
+{{ block title }}{{ endblock }}
+
+{{ block styles }}
+<link rel="stylesheet" href="{{ static 'rolegames/rolegames.css' }}">
+<style>#_otree-title { display: none; }</style>
+{{ endblock }}
+
+{{ block content }}
+{{ header }}
+<hr class="rg-divider">
+{{ players }}
+{{ if player.timed_out }}
+<div class="rg-info">⏱️ Time ran out, so a random choice was made for you this round.</div>
+{{ endif }}
+<hr class="rg-divider">
+
+<div class="rg-metrics">
+  <div>
+    <div class="rg-metric-label">Group score this round</div>
+    <div class="rg-metric-value">{{ round_score }} pts</div>
+  </div>
+  <div>
+    <div class="rg-metric-label">Group total this game</div>
+    <div class="rg-metric-value">{{ total }} pts</div>
+  </div>
+</div>
+
+<button class="btn btn-primary">▶&nbsp; {{ next_label }}</button>
+{{ endblock }}

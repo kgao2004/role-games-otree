@@ -1,0 +1,83 @@
+{{ block title }}Welcome to Role Games{{ endblock }}
+
+{{ block styles }}
+<link rel="stylesheet" href="{{ static 'rolegames/rolegames.css' }}">
+{{ endblock }}
+
+{{ block content }}
+<p class="rg-lead">
+  A coordination game. Each round you and the other people in your group secretly choose an action,
+  and the actions combine for different payoffs. Your goal is to maximize your group's points.
+</p>
+
+<p class="rg-section-title">Actions</p>
+<div class="rg-actions">
+  <div class="rg-action-card rg-stag">
+    <span style="font-size:1.3em">🦌</span>&nbsp; <b>Hunt Stag</b><br>
+    <small>Worth 4 points, but only 1 per round.<br>Risky: needs <b>≥ 2 players</b> to pay off.</small>
+  </div>
+  <div class="rg-action-card rg-hare">
+    <span style="font-size:1.3em">🐇</span>&nbsp; <b>Hunt Hare</b><br>
+    <small>Worth 1 point, but plenty available.<br>Safe: always pays off.</small>
+  </div>
+</div>
+
+<p class="rg-section-title">Group score examples <span class="rg-muted">({{ n }} players)</span></p>
+<table class="rg-score-table">
+  <tr><th class="rg-center">🦌 Stag</th><th class="rg-center">🐇 Hare</th><th>Group score</th></tr>
+  {{ for row in score_rows }}
+  <tr class="{{ if row.best }}rg-row-best{{ elif row.worst }}rg-row-worst{{ endif }}">
+    <td class="rg-center">{{ row.stags }}</td>
+    <td class="rg-center">{{ row.hares }}</td>
+    <td>
+      {{ row.total }} pts
+      {{ if row.best }}&nbsp;<span class="rg-tag-best">★ best outcome</span>{{ endif }}
+      {{ if row.worst }}&nbsp;<span class="rg-tag-worst">▼ worst outcome</span>{{ endif }}
+    </td>
+  </tr>
+  {{ endfor }}
+</table>
+
+<p class="rg-section-title">How it works</p>
+<div class="rg-panel">
+  <ol>
+    <li>You'll play <b>{{ games_label }}</b> of <b>{{ rounds_per_game }} rounds</b> each.</li>
+    <li>At the start of every game you're placed in a new group of <b>{{ n }}</b>.</li>
+    <li>
+      Each round, everyone picks <b>Stag</b> or <b>Hare</b> at the same time.
+      When everyone in your group has chosen, you'll see the results.
+    </li>
+    {{ if choice_timeout }}
+    <li>You have {{ choice_timeout }} seconds to choose. If time runs out, a random choice is made for you.</li>
+    {{ endif }}
+    <li>
+      After you click <b>I'm ready</b>, you will wait until everyone else is ready.
+      The study starts when the whole group has finished these instructions.
+    </li>
+    {{ if has_replacement }}
+    <li>Sometimes one player in a group is replaced by someone new partway through a game. You'll be told when it happens.</li>
+    {{ endif }}
+    {{ if has_bench }}
+    <li>There are more people than seats, so a few people sit out at a time and rotate in.</li>
+    {{ endif }}
+  </ol>
+</div>
+
+<p class="rg-section-title">What you'll see about the other players</p>
+<div class="rg-conditions">
+  {{ for c in conditions }}
+  <div class="rg-condition"><b>{{ c.icon }}&nbsp;{{ c.name }}</b><br><small>{{ c.text }}</small></div>
+  {{ endfor }}
+</div>
+{{ if multiple_conditions }}
+<p class="rg-caption" style="margin-top:8px">Each game uses one of these. You'll be told which before it starts.</p>
+{{ endif }}
+
+{{ if instructions_timeout }}
+<p class="rg-caption" style="margin-top:16px">
+  This page advances automatically after {{ instructions_timeout }} seconds.
+</p>
+{{ endif }}
+
+<div style="margin-top:22px"><button class="btn btn-primary">I'm ready</button></div>
+{{ endblock }}

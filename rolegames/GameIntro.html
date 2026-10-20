@@ -1,0 +1,25 @@
+{{ block title }}Game {{ player.game }} of {{ num_games }}{{ endblock }}
+
+{{ block styles }}
+<link rel="stylesheet" href="{{ static 'rolegames/rolegames.css' }}">
+{{ endblock }}
+
+{{ block content }}
+<div class="rg-condition" style="max-width:560px">
+  <b>{{ condition_icon }}&nbsp;{{ condition_name }}</b><br><small>{{ condition_text }}</small>
+</div>
+
+{{ if player.on_bench }}
+<div class="rg-info">
+  There are more people than seats in this game, so you're sitting out for now.
+  You'll join when a seat opens up or when the next game starts.
+</div>
+{{ else }}
+<p style="margin:18px 0 12px">{{ intro }}</p>
+{{ players }}
+{{ endif }}
+
+<div style="margin-top:22px">
+  <button class="btn btn-primary">{{ if player.on_bench }}Continue{{ else }}Start game{{ endif }}</button>
+</div>
+{{ endblock }}

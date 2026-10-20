@@ -1,0 +1,41 @@
+{{ block title }}Consent{{ endblock }}
+
+{{ block styles }}
+<link rel="stylesheet" href="{{ static 'rolegames/rolegames.css' }}">
+{{ endblock }}
+
+{{ block content }}
+<p class="rg-caption">Placeholder consent text — replace with your IRB-approved wording before launching.</p>
+
+<div class="rg-panel">
+  <p><b>Study title:</b> Role Games</p>
+  <p>
+    You are invited to take part in a research study about how people coordinate in a group
+    decision-making game. You will play several short rounds of a stag-hunt game with other
+    participants and then see a summary of your group’s scores.
+  </p>
+  <p>
+    Participation is voluntary. You may leave at any time by closing this window. There is no
+    penalty for withdrawing, but you will only receive the Prolific completion link if you
+    finish the study.
+  </p>
+  <p>
+    We record your Prolific ID (if you arrived through Prolific), your choices, timeouts,
+    group scores, and seating. We do not ask for your name or other personally identifying
+    information.
+  </p>
+  <p>
+    <b>Contact:</b> replace this line with the researcher’s name, email, and (if required)
+    IRB protocol number.
+  </p>
+</div>
+
+<p class="rg-consent">
+  <label>
+    <input type="checkbox" name="consent" value="True">
+    I have read this information and I agree to take part in this study.
+  </label>
+</p>
+
+<div style="margin-top:22px"><button class="btn btn-primary">Continue</button></div>
+{{ endblock }}

@@ -1,0 +1,23 @@
+{{ block title }}{{ endblock }}
+
+{{ block styles }}
+<link rel="stylesheet" href="{{ static 'rolegames/rolegames.css' }}">
+<style>#_otree-title { display: none; }</style>
+{{ endblock }}
+
+{{ block content }}
+{{ header }}
+<hr class="rg-divider">
+{{ players }}
+{{ if message }}<div class="rg-info">ℹ️ {{ message }}</div>{{ endif }}
+<hr class="rg-divider">
+
+<p class="rg-prompt">What do you choose?</p>
+<p class="rg-caption">🦌 Stag needs ≥ 2 players (+4 pts) · 🐇 Hare always pays (+1 pt)</p>
+<p class="rg-caption">Minimum score: {{ minimum }} pts<br>Maximum score: {{ maximum }} pts</p>
+
+<div class="rg-choices">
+  <button class="rg-choice" name="choice" value="stag">🦌&nbsp; Hunt Stag</button>
+  <button class="rg-choice" name="choice" value="hare">🐇&nbsp; Hunt Hare</button>
+</div>
+{{ endblock }}

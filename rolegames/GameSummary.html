@@ -1,0 +1,32 @@
+{{ block title }}Game {{ player.game }} complete{{ endblock }}
+
+{{ block styles }}
+<link rel="stylesheet" href="{{ static 'rolegames/rolegames.css' }}">
+{{ endblock }}
+
+{{ block content }}
+{{ if player.on_bench }}
+<p>Game {{ player.game }} is over.</p>
+{{ else }}
+<div class="rg-metrics">
+  <div>
+    <div class="rg-metric-label">Your group's score this game</div>
+    <div class="rg-metric-value">{{ total }} pts</div>
+  </div>
+  <div>
+    <div class="rg-metric-label">Best possible</div>
+    <div class="rg-metric-value">{{ best }} pts</div>
+  </div>
+  <div>
+    <div class="rg-metric-label">Lowest possible</div>
+    <div class="rg-metric-value">{{ worst }} pts</div>
+  </div>
+</div>
+{{ endif }}
+
+<p>
+  {{ if is_last_game }}That was the last game.
+  {{ else }}Next, you'll be placed in a new group for game {{ next_game }}.{{ endif }}
+</p>
+<button class="btn btn-primary">Continue</button>
+{{ endblock }}

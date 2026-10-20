@@ -1,0 +1,25 @@
+{{ block title }}Check your understanding{{ endblock }}
+
+{{ block styles }}
+<link rel="stylesheet" href="{{ static 'rolegames/rolegames.css' }}">
+{{ endblock }}
+
+{{ block content }}
+<p class="rg-lead">
+  Please answer these questions about the game. You can continue once every answer is correct.
+</p>
+
+<div class="rg-panel">
+  <p class="rg-prompt" style="margin-top:0">A short reminder</p>
+  <ul>
+    <li>Each round, everyone in your group chooses <b>Stag</b> or <b>Hare</b> at the same time.</li>
+    <li>Hare always adds 1 point. Stag adds 4 points only if <b>at least 2</b> players choose it.</li>
+    <li>Your points each round are the <b>group’s total</b> for that round.</li>
+    <li>At the start of every game you are placed in a <b>new group</b>.</li>
+  </ul>
+</div>
+
+{{ formfields }}
+
+<div style="margin-top:22px"><button class="btn btn-primary">Continue</button></div>
+{{ endblock }}
