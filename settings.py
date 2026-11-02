@@ -1,63 +1,57 @@
 from os import environ
 
-# Every session type shares SESSION_CONFIG_DEFAULTS. Any of these values can also be
-# changed in the admin page when you create a session.
 SESSION_CONFIG_DEFAULTS = dict(
     # Base Prolific reward is set in Prolific / oTree HR, not here.
     # Points are group totals each round; 0.01 → 100 points = $1.00 bonus. Override per session.
     real_world_currency_per_point=0.01,
     participation_fee=0.00,
-    players_per_table=3,      # 3–5 people play together at each table
-    num_games=3,              # new tables are formed at the start of every game
+    players_per_table=3,
+    num_games=3,
     rounds_per_game=10,
-    conditions='identity',    # comma-separated; game k uses the k-th entry (cycling)
-    replacement_rate=0.0,     # per table, per round, from round 2 of each game
-    choice_timeout=60,        # seconds to choose before a random choice is made (0 = no limit)
-    results_timeout=30,       # seconds on the results page before moving on (0 = no limit)
-    instructions_timeout=180, # seconds on instructions before advancing (0 = no limit)
+    conditions='identity',
+    replacement_rate=0.0,
+    choice_timeout=60,
+    results_timeout=30,
+    instructions_timeout=180,
     doc="",
 )
 
+def _study1(name, display_name, n, condition):
+    return dict(
+        name=name,
+        display_name=display_name,
+        app_sequence=['intro', 'rolegames'],
+        num_demo_participants=n,
+        players_per_table=n,
+        conditions=condition,
+        replacement_rate=0.0,
+        doc=f'Study 1: {n}-player tables, {condition}, no replacement. Auto-starts when {n} arrive.',
+    )
+
+
 SESSION_CONFIGS = [
-    dict(
-        name='role_games_test',
-        display_name='Role Games: all three conditions, with replacement',
-        app_sequence=['rolegames'],
-        num_demo_participants=6,
-        conditions='anonymous, identity, tag_based',
-        replacement_rate=0.3,
-        doc="One game per condition. Players are sometimes replaced partway through a game.",
-    ),
-    dict(
-        name='role_games_anonymous',
-        display_name='Role Games: Anonymous',
-        app_sequence=['rolegames'],
-        num_demo_participants=6,
-        conditions='anonymous',
-    ),
-    dict(
-        name='role_games_identity',
-        display_name='Role Games: Identity',
-        app_sequence=['rolegames'],
-        num_demo_participants=6,
-        conditions='identity',
-    ),
-    dict(
-        name='role_games_tag_based',
-        display_name='Role Games: Tag-based',
-        app_sequence=['rolegames'],
-        num_demo_participants=6,
-        conditions='tag_based',
-    ),
+    _study1('study1_3_anonymous', 'Study 1: 3 players · Anonymous', 3, 'anonymous'),
+    _study1('study1_3_identity', 'Study 1: 3 players · Identity', 3, 'identity'),
+    _study1('study1_3_tag_based', 'Study 1: 3 players · Tag-based', 3, 'tag_based'),
+    _study1('study1_5_anonymous', 'Study 1: 5 players · Anonymous', 5, 'anonymous'),
+    _study1('study1_5_identity', 'Study 1: 5 players · Identity', 5, 'identity'),
+    _study1('study1_5_tag_based', 'Study 1: 5 players · Tag-based', 5, 'tag_based'),
 ]
 
-# A room gives everyone one permanent link. People can open it before the session exists
-# and wait there; you then create the session with however many showed up.
+# One room per treatment so each Prolific study has a stable /room/... link.
 ROOMS = [
-    dict(name='play', display_name='Role Games'),
+    dict(name='play_3_anonymous', display_name='Study 1: 3 · Anonymous'),
+    dict(name='play_3_identity', display_name='Study 1: 3 · Identity'),
+    dict(name='play_3_tag_based', display_name='Study 1: 3 · Tag-based'),
+    dict(name='play_5_anonymous', display_name='Study 1: 5 · Anonymous'),
+    dict(name='play_5_identity', display_name='Study 1: 5 · Identity'),
+    dict(name='play_5_tag_based', display_name='Study 1: 5 · Tag-based'),
 ]
 
-PARTICIPANT_FIELDS = ['rounds_benched', 'bench_since', 'finished']
+PARTICIPANT_FIELDS = [
+    'rounds_benched', 'bench_since', 'finished',
+    'consent', 'comp_stag', 'comp_payoff', 'comp_groups',
+]
 SESSION_FIELDS = ['prolific_completion_url']
 
 LANGUAGE_CODE = 'en'
@@ -65,11 +59,11 @@ REAL_WORLD_CURRENCY_CODE = 'USD'
 USE_POINTS = True
 
 ADMIN_USERNAME = 'admin'
-# Set this in an environment variable before running the server where others can reach it.
 ADMIN_PASSWORD = environ.get('OTREE_ADMIN_PASSWORD')
 
 DEMO_PAGE_INTRO_HTML = """
-Role Games: a multi-player stag hunt with Anonymous, Identity, and Tag-based conditions.
+Role Games Study 1: 3- or 5-player tables in Anonymous, Identity, or Tag-based.
+Tables auto-start when enough people arrive.
 """
 
 SECRET_KEY = environ.get('OTREE_SECRET_KEY', '8876369626541')

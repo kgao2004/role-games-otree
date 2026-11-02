@@ -41,8 +41,11 @@
 <p class="rg-section-title">How it works</p>
 <div class="rg-panel">
   <ol>
-    <li>You'll play <b>{{ games_label }}</b> of <b>{{ rounds_per_game }} rounds</b> each.</li>
-    <li>At the start of every game you're placed in a new group of <b>{{ n }}</b>.</li>
+    <li>
+      After these instructions you will wait until <b>{{ n }}</b> people are ready.
+      As soon as your table is full, your game starts automatically.
+    </li>
+    <li>You'll play <b>{{ games_label }}</b> of <b>{{ rounds_per_game }} rounds</b> each with the <b>same group</b>.</li>
     <li>
       Each round, everyone picks <b>Stag</b> or <b>Hare</b> at the same time.
       When everyone in your group has chosen, you'll see the results.
@@ -51,14 +54,11 @@
     <li>You have {{ choice_timeout }} seconds to choose. If time runs out, a random choice is made for you.</li>
     {{ endif }}
     <li>
-      After you click <b>I'm ready</b>, you will wait until everyone else is ready.
-      The study starts when the whole group has finished these instructions.
+      Stay on the waiting page with this tab active. If the page thinks you left, you may need to
+      click to rejoin before you can be matched.
     </li>
     {{ if has_replacement }}
     <li>Sometimes one player in a group is replaced by someone new partway through a game. You'll be told when it happens.</li>
-    {{ endif }}
-    {{ if has_bench }}
-    <li>There are more people than seats, so a few people sit out at a time and rotate in.</li>
     {{ endif }}
   </ol>
 </div>

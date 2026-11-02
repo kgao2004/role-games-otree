@@ -5,15 +5,14 @@ from otree.api import *
 doc = """
 Role Games with real people: a modified N-player stag hunt played at tables of 3–5.
 
-Tables are re-formed at the start of every game. Within a game a table keeps its seats
-(label, color, and tag), and replacement changes who sits in one seat. Newcomers come from
-the bench if anyone is sitting out, otherwise from another table (see replace_players).
+Tables auto-start when players_per_table people arrive (group_by_arrival_time).
+Partners stay together for the whole session. Parallel tables do not wait on each other.
 """
 
 
 class C(BaseConstants):
     NAME_IN_URL = 'rolegames'
-    PLAYERS_PER_GROUP = None     # Regroup sets the groups every round
+    PLAYERS_PER_GROUP = None     # Match forms groups of session players_per_table
     NUM_ROUNDS = 60              # upper limit on num_games × rounds_per_game
 
     CONDITIONS = {
@@ -26,7 +25,6 @@ class C(BaseConstants):
         'identity': ('🪪', "You see each individual player's choice every round, labeled by player."),
         'tag_based': ('🏷️', 'Players have colored tags (red / blue). You see choices grouped by tag, not by individual.'),
     }
-    # Same palette as the Streamlit Play page
     PLAYER_COLORS = ['#4878CF', '#6ACC65', '#D65F5F', '#e5a917', '#9b59b6']
     TAG_COLORS = {'red': '#e57373', 'blue': '#64b5f6'}
     ANON_COLOR = '#9E9E9E'
@@ -34,9 +32,6 @@ class C(BaseConstants):
 
     INTRO_TIMEOUT = 90
     SUMMARY_TIMEOUT = 60
-    COMP_STAG_CORRECT = 1
-    COMP_PAYOFF_CORRECT = 1
-    COMP_GROUPS_CORRECT = 1
 
 
 class Subsession(BaseSubsession):
@@ -44,13 +39,13 @@ class Subsession(BaseSubsession):
 
 
 class Group(BaseGroup):
-    table = models.IntegerField(initial=0)               # 0 = the bench
+    table = models.IntegerField(initial=0)
     condition = models.StringField(initial='')
     stag_count = models.IntegerField()
     group_total = models.IntegerField()
-    replaced_seat = models.IntegerField(initial=0)       # seat whose occupant changed this round
+    replaced_seat = models.IntegerField(initial=0)
     replaced_tag = models.StringField(initial='')
-    replacement_source = models.StringField(initial='')  # newcomer came from 'bench' or 'other_table'
+    replacement_source = models.StringField(initial='')
 
 
 class Player(BasePlayer):
@@ -61,44 +56,11 @@ class Player(BasePlayer):
     table = models.IntegerField(initial=0)
     seat = models.IntegerField(initial=0)
     tag = models.StringField(initial='')
-    joined_table = models.BooleanField(initial=False)    # took over a seat mid-game this round
-    left_table = models.BooleanField(initial=False)      # moved from a table to the bench this round
+    joined_table = models.BooleanField(initial=False)
+    left_table = models.BooleanField(initial=False)
     choice = models.StringField(choices=['stag', 'hare'])
     timed_out = models.BooleanField(initial=False)
-    consent = models.BooleanField(
-        label='I have read this information and I agree to take part in this study.',
-        initial=False,
-    )
-    comp_stag = models.IntegerField(
-        label='When is the +4 stag bonus added to the group score?',
-        choices=[
-            [1, 'When at least 2 players choose Stag'],
-            [2, 'When every player chooses Stag'],
-            [3, 'When at least 1 player chooses Stag'],
-        ],
-        widget=widgets.RadioSelect,
-    )
-    comp_payoff = models.IntegerField(
-        label='What points do you receive each round?',
-        choices=[
-            [1, "The group's total score that round"],
-            [2, 'Only the points from your own action'],
-            [3, 'A random number of points'],
-        ],
-        widget=widgets.RadioSelect,
-    )
-    comp_groups = models.IntegerField(
-        label='How are groups formed?',
-        choices=[
-            [1, 'You are placed in a new group at the start of every game'],
-            [2, 'You stay in the same group for the whole study'],
-            [3, 'Groups are reshuffled every round'],
-        ],
-        widget=widgets.RadioSelect,
-    )
 
-
-# ─── Settings and payoff ─────────────────────────────────────────────────────
 
 def config(session):
     c = session.config
@@ -133,12 +95,10 @@ def condition_for_game(s, game):
 
 
 def group_total(actions):
-    """Same payoff as role_games.game._group_total in the model code."""
     return (4 if actions.count('stag') >= 2 else 0) + actions.count('hare')
 
 
 def tags_for_table(n):
-    """Same split as the model: 3 → 1 red/2 blue, 4 → 2/2, 5 → 2/3."""
     n_red = 1 if n == 3 else 2
     tags = ['red'] * n_red + ['blue'] * (n - n_red)
     random.shuffle(tags)
@@ -171,142 +131,46 @@ def creating_session(subsession):
         p.participant.bench_since = 0
 
 
-# ─── Seating: new tables, carry-over, replacement ────────────────────────────
-#
-# A table is {seat: [tag, player]}. Seats keep their label and tag for the whole game;
-# replacement only changes the player in a seat.
-
-def new_tables(players, n, condition):
-    order = list(players)
-    random.shuffle(order)
-    # people who have sat out more rounds get seats first (sort is stable, so ties stay random)
-    order.sort(key=lambda p: -p.participant.rounds_benched)
-    k = len(order) // n
-    tables = {}
-    for t in range(1, k + 1):
-        members = order[(t - 1) * n:t * n]
-        tags = tags_for_table(n) if condition == 'tag_based' else [''] * n
-        tables[t] = {seat: [tags[seat - 1], p] for seat, p in enumerate(members, start=1)}
-    return tables, order[k * n:]
+def group_by_arrival_time_method(subsession, waiting_players):
+    """Form a table as soon as players_per_table people are waiting."""
+    n = config(subsession.session)['n']
+    if len(waiting_players) >= n:
+        return waiting_players[:n]
 
 
-def carry_over(players):
-    tables, bench = {}, []
-    for p in players:
-        prev = p.in_round(p.round_number - 1)
-        if prev.on_bench:
-            bench.append(p)
-        else:
-            tables.setdefault(prev.table, {})[prev.seat] = [prev.tag, p]
-    random.shuffle(bench)
-    bench.sort(key=lambda p: p.participant.bench_since)   # longest waiting first
-    return tables, bench
-
-
-def replace_players(tables, bench, rate):
-    """Each table independently gets a newcomer in one random seat with probability `rate`.
-
-    If anyone is on the bench, newcomers form a chain: the longest-waiting person takes the
-    first open seat, the person they replace moves to the next drawn table, and so on; the
-    last person replaced goes to the bench. With nobody on the bench, the drawn tables pass
-    one player each around a circle. Either way every drawn table gets exactly one newcomer.
-    A lone drawn table with no bench has nobody to receive, so it pairs with an undrawn table
-    half the time, which keeps the average rate right. Mutates tables and bench.
-    Returns ({table: event}, ids of people who ended up on the bench).
-    """
-    events = {}
-    hit = [t for t in tables if random.random() < rate]
-    random.shuffle(hit)
-
-    def replace(t, arriving, source):
-        seat = random.choice(list(tables[t]))
-        tag, leaving = tables[t][seat]
-        tables[t][seat] = [tag, arriving]
-        events[t] = dict(seat=seat, tag=tag, source=source, newcomer=arriving.id_in_subsession)
-        return leaving
-
-    if bench:
-        waiting = {p.id_in_subsession for p in bench}
-        queue = list(bench)   # longest waiting first; people replaced join the end
-        for t in hit:
-            arriving = queue.pop(0)
-            source = 'bench' if arriving.id_in_subsession in waiting else 'other_table'
-            queue.append(replace(t, arriving, source))
-        leavers = {p.id_in_subsession for p in queue} - waiting
-        bench[:] = queue
-        return events, leavers
-
-    if len(hit) == 1:
-        undrawn = [u for u in tables if u not in hit]
-        if not undrawn or random.random() < 0.5:
-            return events, set()
-        hit.append(random.choice(undrawn))
-    if len(hit) >= 2:
-        # everyone moving is chosen before anyone is seated, so nobody moves twice
-        movers = []
-        for t in hit:
-            seat = random.choice(list(tables[t]))
-            movers.append((t, seat, tables[t][seat][1]))
-        for i, (t, seat, _) in enumerate(movers):
-            arriving = movers[i - 1][2]   # from the previous table in the circle
-            tag = tables[t][seat][0]
-            tables[t][seat] = [tag, arriving]
-            events[t] = dict(seat=seat, tag=tag, source='other_table',
-                             newcomer=arriving.id_in_subsession)
-    return events, set()
-
-
-def assign_seats(subsession):
-    s = config(subsession.session)
-    rnd = subsession.round_number
+def prepare_group(group):
+    """Assign seats/tags within a fixed GBAT group for the current round."""
+    s = config(group.session)
+    players = group.get_players()
+    rnd = players[0].round_number
     game, round_in_game = game_and_round(rnd, s['rounds_per_game'])
     condition = condition_for_game(s, game)
-    players = subsession.get_players()
+    table_id = group.id_in_subsession
 
     if round_in_game == 1:
-        tables, bench = new_tables(players, s['n'], condition)
-        events, leavers = {}, set()
+        order = list(players)
+        random.shuffle(order)
+        tags = tags_for_table(len(order)) if condition == 'tag_based' else [''] * len(order)
+        for seat, p in enumerate(order, start=1):
+            p.game, p.round_in_game, p.condition = game, round_in_game, condition
+            p.table, p.seat, p.tag = table_id, seat, tags[seat - 1]
+            p.on_bench = False
+            p.joined_table = False
+            p.left_table = False
     else:
-        tables, bench = carry_over(players)
-        events, leavers = replace_players(tables, bench, s['replacement_rate'])
+        for p in players:
+            prev = p.in_round(rnd - 1)
+            p.game, p.round_in_game, p.condition = game, round_in_game, condition
+            p.table, p.seat, p.tag = prev.table, prev.seat, prev.tag
+            p.on_bench = False
+            p.joined_table = False
+            p.left_table = False
 
-    assignments = {}
-    newcomers = {e['newcomer'] for e in events.values()}
-    for t, seats in tables.items():
-        for seat, (tag, p) in seats.items():
-            iis = p.id_in_subsession
-            assignments[iis] = dict(table=t, seat=seat, tag=tag, on_bench=False,
-                                    joined_table=iis in newcomers, left_table=False)
-    for p in bench:
-        iis = p.id_in_subsession
-        assignments[iis] = dict(table=0, seat=0, tag='', on_bench=True,
-                                joined_table=False, left_table=iis in leavers)
-
-    matrix = [[tables[t][seat][1] for seat in sorted(tables[t])] for t in sorted(tables)]
-    if bench:
-        matrix.append(bench)
-    subsession.set_group_matrix(matrix)
-
-    # set_group_matrix reloads players and recreates groups, so set fields afterwards
-    for p in subsession.get_players():
-        a = assignments[p.id_in_subsession]
-        p.game, p.round_in_game, p.condition = game, round_in_game, condition
-        p.table, p.seat, p.tag, p.on_bench = a['table'], a['seat'], a['tag'], a['on_bench']
-        p.joined_table, p.left_table = a['joined_table'], a['left_table']
-        if p.on_bench:
-            was_benched = round_in_game > 1 and p.in_round(rnd - 1).on_bench
-            if not was_benched:
-                p.participant.bench_since = rnd
-            p.participant.rounds_benched += 1
-
-    for g in subsession.get_groups():
-        g.table = g.get_players()[0].table
-        g.condition = condition
-        event = events.get(g.table)
-        if event:
-            g.replaced_seat = event['seat']
-            g.replaced_tag = event['tag']
-            g.replacement_source = event['source']
+    group.table = table_id
+    group.condition = condition
+    group.replaced_seat = 0
+    group.replaced_tag = ''
+    group.replacement_source = ''
 
 
 # ─── What each player sees ───────────────────────────────────────────────────
@@ -316,7 +180,6 @@ def table_members(player):
 
 
 def table_total(player, *, include_current):
-    """Points scored by this player's table so far in the current game."""
     start = player.round_number - player.round_in_game + 1
     end = player.round_number if include_current else player.round_number - 1
     if end < start:
@@ -425,31 +288,15 @@ def replacement_message(player):
     return f'One of the {g.replaced_tag.title()} players has been replaced!'
 
 
-def score_rows(n):
-    rows = []
-    for stags in range(n + 1):
-        rows.append(dict(
-            stags=stags, hares=n - stags, total=group_total(['stag'] * stags + ['hare'] * (n - stags)),
-            best=stags == 2, worst=stags == 1,
-        ))
-    return rows
-
-
-def condition_cards(conditions):
-    seen = []
-    for c in conditions:
-        if c not in seen:
-            seen.append(c)
-    return [dict(icon=C.CONDITION_INFO[c][0], name=C.CONDITIONS[c], text=C.CONDITION_INFO[c][1]) for c in seen]
-
-
 def count_label(k, noun):
     return f'{k} {noun}' + ('' if k == 1 else 's')
 
 
 def group_intro(player, members):
-    """One line describing the player's new group at the start of a game."""
-    start = f"You're in a new group of {len(members)}."
+    if player.game == 1:
+        start = f"You're in a group of {len(members)}."
+    else:
+        start = f"Same group of {len(members)}. Game {player.game} is starting."
     if player.condition == 'tag_based':
         n_red = sum(p.tag == 'red' for p in members)
         chip = (f'<span class="rg-tag-chip" style="background:{C.TAG_COLORS[player.tag]}">'
@@ -463,102 +310,36 @@ def group_intro(player, members):
 
 # ─── Pages ───────────────────────────────────────────────────────────────────
 
-class Consent(Page):
-    form_model = 'player'
-    form_fields = ['consent']
+class Match(WaitPage):
+    """First page: form tables of players_per_table as people arrive."""
+    group_by_arrival_time = True
+    title_text = 'Waiting for your group'
+    body_text = (
+        'Waiting for enough people to start. Keep this tab open and active — '
+        'if the page thinks you left, click to rejoin.'
+    )
 
     @staticmethod
     def is_displayed(player):
         return player.round_number == 1
 
     @staticmethod
-    def error_message(player, values):
-        if not values.get('consent'):
-            return 'You must consent to take part in order to continue.'
+    def after_all_players_arrive(group):
+        prepare_group(group)
 
 
-class Comprehension(Page):
-    form_model = 'player'
-    form_fields = ['comp_stag', 'comp_payoff', 'comp_groups']
-
-    @staticmethod
-    def is_displayed(player):
-        return player.round_number == 1
-
-    @staticmethod
-    def error_message(player, values):
-        errors = {}
-        if values['comp_stag'] != C.COMP_STAG_CORRECT:
-            errors['comp_stag'] = (
-                'Not quite. Stag is worth +4 only if at least 2 players choose it.'
-            )
-        if values['comp_payoff'] != C.COMP_PAYOFF_CORRECT:
-            errors['comp_payoff'] = (
-                'Not quite. Each round you receive the group’s total score, not just your own action.'
-            )
-        if values['comp_groups'] != C.COMP_GROUPS_CORRECT:
-            errors['comp_groups'] = (
-                'Not quite. You are placed in a new group at the start of every game.'
-            )
-        return errors
-
-
-class Instructions(Page):
-    @staticmethod
-    def is_displayed(player):
-        return player.round_number == 1
-
-    @staticmethod
-    def get_timeout_seconds(player):
-        return config(player.session)['instructions_timeout'] or None
-
-    @staticmethod
-    def vars_for_template(player):
-        s = config(player.session)
-        num_players = len(player.subsession.get_players())
-        cards = condition_cards(s['conditions'])
-        return dict(
-            n=s['n'],
-            games_label=count_label(s['num_games'], 'game'),
-            rounds_per_game=s['rounds_per_game'],
-            score_rows=score_rows(s['n']),
-            conditions=cards,
-            multiple_conditions=len(cards) > 1,
-            has_replacement=s['replacement_rate'] > 0,
-            has_bench=num_players % s['n'] != 0,
-            choice_timeout=s['choice_timeout'],
-            instructions_timeout=s['instructions_timeout'],
-        )
-
-
-class Regroup(WaitPage):
-    wait_for_all_groups = True
+class Prepare(WaitPage):
+    """Later rounds: keep the same group; refresh seats at the start of each game."""
+    title_text = 'Please wait'
+    body_text = 'Waiting for the others in your group.'
 
     @staticmethod
     def is_displayed(player):
-        return in_play(player)
+        return in_play(player) and player.round_number > 1
 
     @staticmethod
-    def vars_for_template(player):
-        if player.round_number == 1:
-            return dict(
-                title_text='Waiting for everyone to join',
-                body_text='The game starts as soon as everyone has read the instructions.',
-            )
-        prev = player.in_round(player.round_number - 1)
-        if prev.on_bench:
-            if prev.left_table:
-                body = ('Someone new has taken your seat, so you are sitting out for now. '
-                        'You will rejoin when a seat opens up or when the next game starts.')
-            else:
-                body = ('There are more players than seats, so a few people sit out at a time. '
-                        'You will join when a seat opens up or when the next game starts.')
-            return dict(title_text='You are sitting out for now', body_text=body)
-        return dict(title_text='Please wait', body_text='Waiting for the other groups to finish this round.')
-
-    @staticmethod
-    def after_all_players_arrive(subsession):
-        assign_seats(subsession)
+    def after_all_players_arrive(group):
+        prepare_group(group)
 
 
 class GameIntro(Page):
@@ -572,14 +353,14 @@ class GameIntro(Page):
     def vars_for_template(player):
         s = config(player.session)
         icon, text = C.CONDITION_INFO[player.condition]
-        members = [] if player.on_bench else table_members(player)
+        members = table_members(player)
         return dict(
             num_games=s['num_games'],
             condition_icon=icon,
             condition_name=C.CONDITIONS[player.condition],
             condition_text=text,
-            intro=group_intro(player, members) if members else '',
-            players=players_html(player) if members else '',
+            intro=group_intro(player, members),
+            players=players_html(player),
         )
 
 
@@ -589,7 +370,7 @@ class Choose(Page):
 
     @staticmethod
     def is_displayed(player):
-        return in_play(player) and not player.on_bench
+        return in_play(player)
 
     @staticmethod
     def get_timeout_seconds(player):
@@ -619,7 +400,7 @@ class Compute(WaitPage):
 
     @staticmethod
     def is_displayed(player):
-        return in_play(player) and not player.on_bench
+        return in_play(player)
 
     @staticmethod
     def after_all_players_arrive(group):
@@ -634,7 +415,7 @@ class Compute(WaitPage):
 class Results(Page):
     @staticmethod
     def is_displayed(player):
-        return in_play(player) and not player.on_bench
+        return in_play(player)
 
     @staticmethod
     def get_timeout_seconds(player):
@@ -668,7 +449,7 @@ class GameSummary(Page):
         return dict(
             is_last_game=player.game == s['num_games'],
             next_game=player.game + 1,
-            total=0 if player.on_bench else table_total(player, include_current=True),
+            total=table_total(player, include_current=True),
             best=(n + 2) * r,
             worst=(n - 1) * r,
         )
@@ -704,12 +485,9 @@ class Final(Page):
 
 
 page_sequence = [
-    Consent, Comprehension, Instructions, Regroup, GameIntro, Choose, Compute,
-    Results, GameSummary, Final,
+    Match, Prepare, GameIntro, Choose, Compute, Results, GameSummary, Final,
 ]
 
-
-# ─── Data export (admin → Data → "custom export") ───────────────────────────
 
 def custom_export(players):
     yield [
@@ -721,19 +499,19 @@ def custom_export(players):
     ]
     for p in players:
         if p.field_maybe_none('game') is None:
-            continue   # rounds after the last game
+            continue
         g = p.group
         cfg = p.session.config
-        first = p.in_round(1)
+        part = p.participant
         yield [
-            p.session.code, p.participant.code, p.participant.label or '', p.round_number,
+            p.session.code, part.code, part.label or '', p.round_number,
             p.game, p.round_in_game, p.condition, cfg.get('players_per_table'),
             cfg.get('replacement_rate'), p.on_bench, p.table, p.seat, p.tag,
             p.field_maybe_none('choice') or '', p.timed_out, g.field_maybe_none('stag_count'),
             g.field_maybe_none('group_total'), p.joined_table, p.left_table,
             g.replaced_seat, g.replacement_source,
-            first.field_maybe_none('consent'),
-            first.field_maybe_none('comp_stag'),
-            first.field_maybe_none('comp_payoff'),
-            first.field_maybe_none('comp_groups'),
+            getattr(part, 'consent', None),
+            getattr(part, 'comp_stag', None),
+            getattr(part, 'comp_payoff', None),
+            getattr(part, 'comp_groups', None),
         ]
